@@ -26,7 +26,9 @@
   h1{font-size:24px; margin:0 0 16px}
   #body p{margin:0 0 12px; color:var(--muted); font-size:15px; line-height:1.6}
   #body p.lead{color:var(--ink); font-weight:600; margin-top:18px}
-  audio{width:100%; margin:20px 0 22px; outline:none}
+  audio{width:100%; margin:20px 0 14px; outline:none}
+  .footnote{font-size:13px; color:var(--muted); font-style:italic; line-height:1.55; margin:0 0 18px}
+  .ask{font-size:17px; font-weight:600; color:var(--ink); margin:0 0 16px}
 
   #banner{
     display:none; align-items:center; gap:8px; margin:0 0 16px;
@@ -87,6 +89,9 @@
 
     <audio id="player" controls preload="metadata" src="transfer-demo.mp3"></audio>
 
+    <p class="footnote" id="footnote"></p>
+    <p class="ask" id="ask"></p>
+
     <div id="banner"><span id="bannerText"></span><a onclick="resetVote()">change vote</a></div>
 
     <div class="opts">
@@ -128,8 +133,10 @@ const CONFIG = {
     "I think that's problematic — a single naive agent may repeat back private information when a transfer is rejected. We should forget the way that traditional human-driven handsets work; there is a better way…"   // last line is emphasised as the lead-in
   ],
   audio: "transfer-demo.mp3",
-  optionA: "KISS — the original AI agent does the hold, consult and unhold itself, just like a human would.",
-  optionB: "Compartmentalise — fork a new agent to run the consult, with optional confidentiality between them. Harder to visualise, but better and safer.",
+  footnote: "(this mixes the audio from both legs so you hear what's going on concurrently in both of them, but you get the idea)",
+  ask: "So which is best?",
+  optionA: "KISS — the original AI agent does the hold, consult and unhold itself, just like a human would. While it is consulting it is deaf to the original caller, who just gets silence or hold music.",
+  optionB: "Compartmentalise — fork a new agent to run the consult, with optional confidentiality between them. The original agent can keep talking to the caller, updating them on how the transfer attempt is going. Harder to visualise, but better and safer.",
   // Unique id for THIS poll's shared counter. Change it to start a fresh tally.
   namespace: "aplisay-transfer-vote-03",
   refreshSeconds: 5,
@@ -155,6 +162,8 @@ CONFIG.body.forEach((para, i) => {
   if (i === CONFIG.body.length - 1) p.className = "lead";
   bodyEl.appendChild(p);
 });
+document.getElementById("footnote").textContent = CONFIG.footnote;
+document.getElementById("ask").textContent = CONFIG.ask;
 document.getElementById("labelA").textContent = CONFIG.optionA;
 document.getElementById("labelB").textContent = CONFIG.optionB;
 document.getElementById("player").src = CONFIG.audio;
