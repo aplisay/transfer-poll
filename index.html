@@ -16,52 +16,92 @@
     background:radial-gradient(1200px 600px at 50% -10%,#212a4d,#0f1220 60%); color:var(--ink); padding:24px;
   }
   .card{
-    width:100%; max-width:620px; background:var(--card); border:1px solid var(--line);
-    border-radius:18px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.45);
+    width:100%; max-width:640px; background:var(--card); border:1px solid var(--line);
+    border-radius:18px; padding:30px; box-shadow:0 20px 60px rgba(0,0,0,.45);
   }
-  h1{font-size:24px; margin:0 0 14px}
-  p.q{margin:0 0 22px; color:var(--muted); font-size:15px; line-height:1.55}
-  audio{width:100%; margin:0 0 24px; outline:none}
+  h1{font-size:24px; margin:0 0 16px}
+  #body p{margin:0 0 12px; color:var(--muted); font-size:15px; line-height:1.6}
+  #body p.lead{color:var(--ink); font-weight:600; margin-top:18px}
+  audio{width:100%; margin:20px 0 22px; outline:none}
+
+  #banner{
+    display:none; align-items:center; gap:8px; margin:0 0 16px;
+    background:rgba(58,210,159,.12); border:1px solid rgba(58,210,159,.4);
+    color:#8af0c8; border-radius:12px; padding:11px 14px; font-size:14px; font-weight:600;
+  }
+  #banner.show{display:flex}
+  #banner a{color:var(--muted); text-decoration:underline; cursor:pointer; font-weight:500; margin-left:auto}
+
   .opts{display:grid; gap:14px}
   button.opt{
     appearance:none; cursor:pointer; text-align:left; color:var(--ink);
-    background:#222a48; border:1px solid var(--line); border-radius:14px;
-    padding:16px 18px; font-size:15px; font-weight:600; position:relative; overflow:hidden;
-    transition:transform .08s ease, border-color .2s ease;
+    background:#222a48; border:2px solid var(--line); border-radius:14px;
+    padding:16px 18px; font-size:15px; font-weight:500; position:relative; overflow:hidden;
+    transition:transform .08s ease, border-color .2s ease, opacity .25s ease, box-shadow .2s ease;
   }
   button.opt:hover{border-color:var(--a)}
-  button.opt:active{transform:scale(.99)}
   button.opt[data-k="b"]:hover{border-color:var(--b)}
-  button.opt:disabled{cursor:default; opacity:1}
-  .fill{position:absolute; inset:0 auto 0 0; width:0; background:rgba(91,140,255,.22); transition:width .6s ease; z-index:0}
-  button.opt[data-k="b"] .fill{background:rgba(255,122,89,.22)}
-  .row{position:relative; z-index:1; display:flex; justify-content:space-between; align-items:baseline; gap:14px}
-  .label{flex:1; line-height:1.45}
-  .count{font-variant-numeric:tabular-nums; font-size:15px; color:var(--muted); white-space:nowrap}
-  .pct{font-size:13px; color:var(--muted); margin-left:8px}
-  .meta{display:flex; justify-content:space-between; align-items:center; margin-top:20px; font-size:13px; color:var(--muted)}
+  button.opt:active{transform:scale(.99)}
+  button.opt:disabled{cursor:default}
+
+  .fill{position:absolute; inset:0 auto 0 0; width:0; background:rgba(91,140,255,.20); transition:width .6s ease; z-index:0}
+  button.opt[data-k="b"] .fill{background:rgba(255,122,89,.20)}
+
+  .row{position:relative; z-index:1; display:flex; align-items:flex-start; gap:14px}
+  .badge{
+    flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
+    font-weight:800; font-size:15px; color:#fff; background:var(--a); margin-top:1px;
+  }
+  button.opt[data-k="b"] .badge{background:var(--b)}
+  .label{flex:1; line-height:1.5}
+  .nums{flex:none; text-align:right; white-space:nowrap}
+  .count{font-variant-numeric:tabular-nums; font-size:16px; font-weight:700; color:var(--ink)}
+  .pct{display:block; font-size:12px; color:var(--muted); margin-top:2px}
+
+  /* selected / unselected states */
+  button.opt.selected{border-color:var(--a); box-shadow:0 0 0 3px rgba(91,140,255,.25)}
+  button.opt[data-k="b"].selected{border-color:var(--b); box-shadow:0 0 0 3px rgba(255,122,89,.25)}
+  button.opt.dimmed{opacity:.5}
+  .tag{
+    display:none; position:absolute; top:10px; right:12px; z-index:2;
+    font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+    color:#0f1220; background:var(--a); padding:3px 8px; border-radius:999px;
+  }
+  button.opt[data-k="b"] .tag{background:var(--b)}
+  button.opt.selected .tag{display:block}
+  button.opt.selected .nums{margin-right:86px}
+
+  .meta{display:flex; justify-content:space-between; align-items:center; margin-top:22px; font-size:13px; color:var(--muted)}
   .dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:#3ad29f; margin-right:6px; vertical-align:middle}
-  .thanks{color:#3ad29f; font-weight:600}
-  a.reset{color:var(--muted); text-decoration:underline; cursor:pointer}
 </style>
 </head>
 <body>
   <div class="card">
     <h1 id="title">Transfers, one agent or two?</h1>
-    <p class="q" id="question"></p>
+    <div id="body"></div>
 
     <audio id="player" controls preload="metadata" src="transfer-demo.wav"></audio>
+
+    <div id="banner"><span id="bannerText"></span><a onclick="resetVote()">change vote</a></div>
 
     <div class="opts">
       <button class="opt" id="btnA" data-k="a" onclick="vote('a')">
         <span class="fill" id="fillA"></span>
-        <span class="row"><span class="label" id="labelA">Option A</span>
-        <span><span class="count" id="countA">0</span><span class="pct" id="pctA"></span></span></span>
+        <span class="tag">Your choice</span>
+        <span class="row">
+          <span class="badge">A</span>
+          <span class="label" id="labelA">Option A</span>
+          <span class="nums"><span class="count" id="countA">0</span><span class="pct" id="pctA"></span></span>
+        </span>
       </button>
       <button class="opt" id="btnB" data-k="b" onclick="vote('b')">
         <span class="fill" id="fillB"></span>
-        <span class="row"><span class="label" id="labelB">Option B</span>
-        <span><span class="count" id="countB">0</span><span class="pct" id="pctB"></span></span></span>
+        <span class="tag">Your choice</span>
+        <span class="row">
+          <span class="badge">B</span>
+          <span class="label" id="labelB">Option B</span>
+          <span class="nums"><span class="count" id="countB">0</span><span class="pct" id="pctB"></span></span>
+        </span>
       </button>
     </div>
 
@@ -76,20 +116,19 @@
    EDIT THESE  ↓↓↓
    ============================================================ */
 const CONFIG = {
-  title:    "Transfers, one agent or two?",
-  question: "When we implement consultative transfers with an AI agent we have two choices. " +
-            "Most customers think it will work like a human transfer: place the first caller on hold, " +
-            "the agent turns their attention to the transfer target, asks if they want the transfer, " +
-            "goes back to the caller and either completes the transfer or gives them a reason if it rejects. " +
-            "I think this is problematic because naive agents may repeat back private info on a rejected transfer.",
-  audio:    "transfer-demo.wav",  // the attached recording
-  optionA:  "Option A — KISS: AI agents should do hold, consult, unhold just like a human would.",
-  optionB:  "Option B — No, AI agents should be compartmentalised: fork a new agent to do the consult, " +
-            "and implement optional confidentiality between them. More complicated to visualise but better and safer.",
+  title: "Transfers, one agent or two?",
+  // Body shown as separate paragraphs. The final item is emphasised as the question.
+  body: [
+    "When we implement consultative transfers with an AI agent, most customers expect it to work like a human transfer: the agent places the first caller on hold, turns its attention to the transfer target, and asks whether they'll take the call. It then returns to the caller and either completes the transfer or explains why it was rejected.",
+    "I think that's problematic — a single naive agent may repeat back private information when a transfer is rejected. We should forget the way that traditional human-driven handsets work; there is a better way…"   // last line is emphasised as the lead-in
+  ],
+  audio: "transfer-demo.wav",
+  optionA: "KISS — the original AI agent does the hold, consult and unhold itself, just like a human would.",
+  optionB: "Compartmentalise — fork a new agent to run the consult, with optional confidentiality between them. Harder to visualise, but better and safer.",
   // Unique id for THIS poll's shared counter. Change it to start a fresh tally.
   namespace: "aplisay-transfer-vote-01",
-  refreshSeconds: 5,              // how often the live count refreshes
-  oneVotePerBrowser: true         // set false to allow repeat voting
+  refreshSeconds: 5,
+  oneVotePerBrowser: true
 };
 /* ============================================================
    No need to edit below this line.
@@ -99,27 +138,31 @@ const CONFIG = {
 const API = "https://abacus.jasoncameron.dev";
 const NS  = CONFIG.namespace;
 const voteKey = "voted:" + NS;
-// API keys must be >1 char, so map internal a/b to longer counter keys
-const KEY = { a: "option_a", b: "option_b" };
+const KEY = { a: "option_a", b: "option_b" }; // counter keys must be >1 char
 
 // Apply config text
 document.getElementById("title").textContent = CONFIG.title;
-document.getElementById("question").textContent = CONFIG.question;
+document.title = CONFIG.title;
+const bodyEl = document.getElementById("body");
+CONFIG.body.forEach((para, i) => {
+  const p = document.createElement("p");
+  p.textContent = para;
+  if (i === CONFIG.body.length - 1) p.className = "lead";
+  bodyEl.appendChild(p);
+});
 document.getElementById("labelA").textContent = CONFIG.optionA;
 document.getElementById("labelB").textContent = CONFIG.optionB;
 document.getElementById("player").src = CONFIG.audio;
-document.title = CONFIG.title;
 
 let counts = { a: 0, b: 0 };
 
 async function getCount(key){
-  // /get reads without incrementing; if the key doesn't exist yet it returns 404 -> treat as 0
   try{
     const r = await fetch(`${API}/get/${NS}/${KEY[key]}`, {cache:"no-store"});
     if(!r.ok) return 0;
     const d = await r.json();
     return d.value || 0;
-  }catch(e){ return null; } // null = network error
+  }catch(e){ return null; }
 }
 
 async function hit(key){
@@ -135,8 +178,8 @@ function render(){
   document.getElementById("total").textContent = total + (total === 1 ? " vote" : " votes");
   const pa = total ? Math.round(a/total*100) : 0;
   const pb = total ? Math.round(b/total*100) : 0;
-  document.getElementById("pctA").textContent = total ? ` · ${pa}%` : "";
-  document.getElementById("pctB").textContent = total ? ` · ${pb}%` : "";
+  document.getElementById("pctA").textContent = total ? pa + "%" : "";
+  document.getElementById("pctB").textContent = total ? pb + "%" : "";
   document.getElementById("fillA").style.width = pa + "%";
   document.getElementById("fillB").style.width = pb + "%";
 }
@@ -144,28 +187,21 @@ function render(){
 async function refresh(){
   const [a, b] = await Promise.all([getCount("a"), getCount("b")]);
   const status = document.getElementById("status");
-  if(a === null || b === null){
-    status.textContent = "Reconnecting…";
-    return;
-  }
+  if(a === null || b === null){ status.textContent = "Reconnecting…"; return; }
   counts.a = a; counts.b = b;
   status.textContent = "Live count";
   render();
 }
 
 async function vote(key){
-  if(CONFIG.oneVotePerBrowser && localStorage.getItem(voteKey)){
-    flagVoted();
-    return;
-  }
+  if(CONFIG.oneVotePerBrowser && localStorage.getItem(voteKey)){ markChoice(); return; }
   document.getElementById("btnA").disabled = true;
   document.getElementById("btnB").disabled = true;
   try{
     const val = await hit(key);
     counts[key] = val;
     if(CONFIG.oneVotePerBrowser) localStorage.setItem(voteKey, key);
-    flagVoted();
-    // pull the other side's latest too
+    markChoice();
     await refresh();
   }catch(e){
     document.getElementById("status").textContent = "Vote failed — try again";
@@ -174,26 +210,32 @@ async function vote(key){
   }
 }
 
-function flagVoted(){
-  if(!CONFIG.oneVotePerBrowser) return;
-  const choice = localStorage.getItem(voteKey);
-  document.getElementById("btnA").disabled = true;
-  document.getElementById("btnB").disabled = true;
-  const label = choice === "a" ? "Option A" : "Option B";
-  document.getElementById("question").innerHTML =
-    `<span class="thanks">Thanks — you voted ${label}.</span> ` +
-    `<a class="reset" onclick="resetVote()">vote again</a>`;
+function markChoice(){
+  const choice = localStorage.getItem(voteKey) || "a";
+  const btnA = document.getElementById("btnA");
+  const btnB = document.getElementById("btnB");
+  btnA.disabled = btnB.disabled = true;
+  btnA.classList.toggle("selected", choice === "a");
+  btnA.classList.toggle("dimmed",   choice !== "a");
+  btnB.classList.toggle("selected", choice === "b");
+  btnB.classList.toggle("dimmed",   choice !== "b");
+  const banner = document.getElementById("banner");
+  document.getElementById("bannerText").textContent =
+    "✓ You voted Option " + choice.toUpperCase();
+  banner.classList.add("show");
 }
 
 function resetVote(){
   localStorage.removeItem(voteKey);
-  document.getElementById("question").textContent = CONFIG.question;
-  document.getElementById("btnA").disabled = false;
-  document.getElementById("btnB").disabled = false;
+  ["btnA","btnB"].forEach(id => {
+    const el = document.getElementById(id);
+    el.disabled = false; el.classList.remove("selected","dimmed");
+  });
+  document.getElementById("banner").classList.remove("show");
 }
 
 // init
-if(CONFIG.oneVotePerBrowser && localStorage.getItem(voteKey)) flagVoted();
+if(CONFIG.oneVotePerBrowser && localStorage.getItem(voteKey)) markChoice();
 refresh();
 setInterval(refresh, CONFIG.refreshSeconds * 1000);
 </script>
