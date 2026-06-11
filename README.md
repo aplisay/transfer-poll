@@ -5,7 +5,7 @@ two approaches to AI agent consultative transfers, with a live shared vote count
 
 ## Files
 - `index.html` — the page (all HTML/CSS/JS inline)
-- `transfer-demo.wav` — the audio clip played on the page
+- `transfer-demo.mp3` — the audio clip played on the page (128 kbps MP3, web-friendly)
 - `netlify.toml` — Netlify config (no build, publish root)
 
 ## How the live count works
