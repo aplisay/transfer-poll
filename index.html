@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transfers, one agent or two?</title>
+<style>
+  :root{
+    --bg:#0f1220; --card:#1a1f35; --ink:#eef1ff; --muted:#9aa3c7;
+    --a:#5b8cff; --b:#ff7a59; --line:#2a3155;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#212a4d,#0f1220 60%); color:var(--ink); padding:24px;
+  }
+  .card{
+    width:100%; max-width:620px; background:var(--card); border:1px solid var(--line);
+    border-radius:18px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.45);
+  }
+  h1{font-size:24px; margin:0 0 14px}
+  p.q{margin:0 0 22px; color:var(--muted); font-size:15px; line-height:1.55}
+  audio{width:100%; margin:0 0 24px; outline:none}
+  .opts{display:grid; gap:14px}
+  button.opt{
+    appearance:none; cursor:pointer; text-align:left; color:var(--ink);
+    background:#222a48; border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; font-size:15px; font-weight:600; position:relative; overflow:hidden;
+    transition:transform .08s ease, border-color .2s ease;
+  }
+  button.opt:hover{border-color:var(--a)}
+  button.opt:active{transform:scale(.99)}
+  button.opt[data-k="b"]:hover{border-color:var(--b)}
+  button.opt:disabled{cursor:default; opacity:1}
+  .fill{position:absolute; inset:0 auto 0 0; width:0; background:rgba(91,140,255,.22); transition:width .6s ease; z-index:0}
+  button.opt[data-k="b"] .fill{background:rgba(255,122,89,.22)}
+  .row{position:relative; z-index:1; display:flex; justify-content:space-between; align-items:baseline; gap:14px}
+  .label{flex:1; line-height:1.45}
+  .count{font-variant-numeric:tabular-nums; font-size:15px; color:var(--muted); white-space:nowrap}
+  .pct{font-size:13px; color:var(--muted); margin-left:8px}
+  .meta{display:flex; justify-content:space-between; align-items:center; margin-top:20px; font-size:13px; color:var(--muted)}
+  .dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:#3ad29f; margin-right:6px; vertical-align:middle}
+  .thanks{color:#3ad29f; font-weight:600}
+  a.reset{color:var(--muted); text-decoration:underline; cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="title">Transfers, one agent or two?</h1>
+    <p class="q" id="question"></p>
+
+    <audio id="player" controls preload="metadata" src="transfer-demo.wav"></audio>
+
+    <div class="opts">
+      <button class="opt" id="btnA" data-k="a" onclick="vote('a')">
+        <span class="fill" id="fillA"></span>
+        <span class="row"><span class="label" id="labelA">Option A</span>
+        <span><span class="count" id="countA">0</span><span class="pct" id="pctA"></span></span></span>
+      </button>
+      <button class="opt" id="btnB" data-k="b" onclick="vote('b')">
+        <span class="fill" id="fillB"></span>
+        <span class="row"><span class="label" id="labelB">Option B</span>
+        <span><span class="count" id="countB">0</span><span class="pct" id="pctB"></span></span></span>
+      </button>
+    </div>
+
+    <div class="meta">
+      <span><span class="dot"></span><span id="status">Live count</span></span>
+      <span id="total">0 votes</span>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   EDIT THESE  ↓↓↓
+   ============================================================ */
+const CONFIG = {
+  title:    "Transfers, one agent or two?",
+  question: "When we implement consultative transfers with an AI agent we have two choices. " +
+            "Most customers think it will work like a human transfer: place the first caller on hold, " +
+            "the agent turns their attention to the transfer target, asks if they want the transfer, " +
+            "goes back to the caller and either completes the transfer or gives them a reason if it rejects. " +
+            "I think this is problematic because naive agents may repeat back private info on a rejected transfer.",
+  audio:    "transfer-demo.wav",  // the attached recording
+  optionA:  "Option A — KISS: AI agents should do hold, consult, unhold just like a human would.",
+  optionB:  "Option B — No, AI agents should be compartmentalised: fork a new agent to do the consult, " +
+            "and implement optional confidentiality between them. More complicated to visualise but better and safer.",
+  // Unique id for THIS poll's shared counter. Change it to start a fresh tally.
+  namespace: "aplisay-transfer-vote-01",
+  refreshSeconds: 5,              // how often the live count refreshes
+  oneVotePerBrowser: true         // set false to allow repeat voting
+};
+/* ============================================================
+   No need to edit below this line.
+   Shared counts use the free Abacus counter API (abacus.jasoncameron.dev).
+   ============================================================ */
+
+const API = "https://abacus.jasoncameron.dev";
+const NS  = CONFIG.namespace;
+const voteKey = "voted:" + NS;
+// API keys must be >1 char, so map internal a/b to longer counter keys
+const KEY = { a: "option_a", b: "option_b" };
+
+// Apply config text
+document.getElementById("title").textContent = CONFIG.title;
+document.getElementById("question").textContent = CONFIG.question;
+document.getElementById("labelA").textContent = CONFIG.optionA;
+document.getElementById("labelB").textContent = CONFIG.optionB;
+document.getElementById("player").src = CONFIG.audio;
+document.title = CONFIG.title;
+
+let counts = { a: 0, b: 0 };
+
+async function getCount(key){
+  // /get reads without incrementing; if the key doesn't exist yet it returns 404 -> treat as 0
+  try{
+    const r = await fetch(`${API}/get/${NS}/${KEY[key]}`, {cache:"no-store"});
+    if(!r.ok) return 0;
+    const d = await r.json();
+    return d.value || 0;
+  }catch(e){ return null; } // null = network error
+}
+
+async function hit(key){
+  const r = await fetch(`${API}/hit/${NS}/${KEY[key]}`, {cache:"no-store"});
+  const d = await r.json();
+  return d.value || 0;
+}
+
+function render(){
+  const a = counts.a, b = counts.b, total = a + b;
+  document.getElementById("countA").textContent = a;
+  document.getElementById("countB").textContent = b;
+  document.getElementById("total").textContent = total + (total === 1 ? " vote" : " votes");
+  const pa = total ? Math.round(a/total*100) : 0;
+  const pb = total ? Math.round(b/total*100) : 0;
+  document.getElementById("pctA").textContent = total ? ` · ${pa}%` : "";
+  document.getElementById("pctB").textContent = total ? ` · ${pb}%` : "";
+  document.getElementById("fillA").style.width = pa + "%";
+  document.getElementById("fillB").style.width = pb + "%";
+}
+
+async function refresh(){
+  const [a, b] = await Promise.all([getCount("a"), getCount("b")]);
+  const status = document.getElementById("status");
+  if(a === null || b === null){
+    status.textContent = "Reconnecting…";
+    return;
+  }
+  counts.a = a; counts.b = b;
+  status.textContent = "Live count";
+  render();
+}
+
+async function vote(key){
+  if(CONFIG.oneVotePerBrowser && localStorage.getItem(voteKey)){
+    flagVoted();
+    return;
+  }
+  document.getElementById("btnA").disabled = true;
+  document.getElementById("btnB").disabled = true;
+  try{
+    const val = await hit(key);
+    counts[key] = val;
+    if(CONFIG.oneVotePerBrowser) localStorage.setItem(voteKey, key);
+    flagVoted();
+    // pull the other side's latest too
+    await refresh();
+  }catch(e){
+    document.getElementById("status").textContent = "Vote failed — try again";
+    document.getElementById("btnA").disabled = false;
+    document.getElementById("btnB").disabled = false;
+  }
+}
+
+function flagVoted(){
+  if(!CONFIG.oneVotePerBrowser) return;
+  const choice = localStorage.getItem(voteKey);
+  document.getElementById("btnA").disabled = true;
+  document.getElementById("btnB").disabled = true;
+  const label = choice === "a" ? "Option A" : "Option B";
+  document.getElementById("question").innerHTML =
+    `<span class="thanks">Thanks — you voted ${label}.</span> ` +
+    `<a class="reset" onclick="resetVote()">vote again</a>`;
+}
+
+function resetVote(){
+  localStorage.removeItem(voteKey);
+  document.getElementById("question").textContent = CONFIG.question;
+  document.getElementById("btnA").disabled = false;
+  document.getElementById("btnB").disabled = false;
+}
+
+// init
+if(CONFIG.oneVotePerBrowser && localStorage.getItem(voteKey)) flagVoted();
+refresh();
+setInterval(refresh, CONFIG.refreshSeconds * 1000);
+</script>
+</body>
+</html>
